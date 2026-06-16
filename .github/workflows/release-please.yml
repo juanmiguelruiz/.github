@@ -1,4 +1,4 @@
-name: Release Please
+name: Release Please (Reusable)
 
 on:
   workflow_call:
@@ -33,19 +33,18 @@ jobs:
 
       - name: Inject and customize configurations
         run: |
-          # 1. Extract only the repo name (e.g., from "my-user/my-project" to "my-project")
+          # 1. Extract only the repo name (e.g., "my-project")
           REPO_NAME=$(echo "${{ inputs.repository }}" | cut -d'/' -f2)
 
-          # 2. If config-file doesn't exist, copy template and swap placeholder with actual repo name
+          # 2. If config-file doesn't exist, copy from the subfolder path and swap placeholder
           if [ ! -f "release-please-config.json" ]; then
             echo "Creating dynamic configuration file for $REPO_NAME..."
-            cp .github-shared-templates/templates/release-please-config.json ./release-please-config.json
+            cp .github-shared-templates/.github/templates/release-please-config.json ./release-please-config.json
             sed -i "s/{{PACKAGE_NAME}}/$REPO_NAME/g" release-please-config.json
           fi
 
-          # 3. Copy base manifest ONLY if the project doesn't have one already
-          # (cp -n prevents overwriting the manifest containing the actual project versions)
-          cp -n .github-shared-templates/templates/.release-please-manifest.json ./ || true
+          # 3. Copy base manifest from the subfolder path ONLY if the project doesn't have one already
+          cp -n .github-shared-templates/.github/templates/.release-please-manifest.json ./ || true
 
       - name: Run release-please
         uses: googleapis/release-please-action@v4
