@@ -2,6 +2,13 @@ name: Release Please
 
 on:
   workflow_call:
+    inputs:
+      repository:
+        required: true
+        type: string
+    secrets:
+      TOKEN:
+        required: true
 
 permissions:
   contents: write
@@ -11,19 +18,38 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del repositorio origen
+      - name: Checkout source repository
         uses: actions/checkout@v4
-
-      - name: Generate token
-        id: generate-token
-        uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          repository: ${{ inputs.repository }}
+          token: ${{ secrets.TOKEN }}
+
+      - name: Checkout global templates
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/.github
+          token: ${{ secrets.TOKEN }}
+          path: .github-shared-templates
+
+      - name: Inject and customize configurations
+        run: |
+          # 1. Extract only the repo name (e.g., from "my-user/my-project" to "my-project")
+          REPO_NAME=$(echo "${{ inputs.repository }}" | cut -d'/' -f2)
+
+          # 2. If config-file doesn't exist, copy template and swap placeholder with actual repo name
+          if [ ! -f "release-please-config.json" ]; then
+            echo "Creating dynamic configuration file for $REPO_NAME..."
+            cp .github-shared-templates/templates/release-please-config.json ./release-please-config.json
+            sed -i "s/{{PACKAGE_NAME}}/$REPO_NAME/g" release-please-config.json
+          fi
+
+          # 3. Copy base manifest ONLY if the project doesn't have one already
+          # (cp -n prevents overwriting the manifest containing the actual project versions)
+          cp -n .github-shared-templates/templates/.release-please-manifest.json ./ || true
 
       - name: Run release-please
         uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          token: ${{ steps.generate-token.outputs.token }}
+          token: ${{ secrets.TOKEN }}
