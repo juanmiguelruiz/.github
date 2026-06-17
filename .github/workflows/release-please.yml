@@ -2,6 +2,12 @@ name: Release Please
 
 on:
   workflow_call:
+    inputs:
+      node-version:
+        description: "Node version to use for publishing"
+        required: false
+        type: string
+        default: "24.16.0"
     secrets:
       APP_ID:
         required: true
