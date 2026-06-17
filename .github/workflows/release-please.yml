@@ -2,10 +2,6 @@ name: Release Please
 
 on:
   workflow_call:
-    inputs:
-      repository:
-        required: true
-        type: string
     secrets:
       APP_ID:
         required: true
@@ -27,30 +23,7 @@ jobs:
       - name: Checkout source repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.repository }}
           token: ${{ steps.app-token.outputs.token }}
-
-      - name: Checkout global templates
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository_owner }}/.github
-          token: ${{ steps.app-token.outputs.token }}
-          path: .github-shared-templates
-
-      - name: Inject and customize configurations
-        run: |
-          # 1. Extract only the repo name (e.g., "my-project")
-          REPO_NAME=$(echo "${{ inputs.repository }}" | cut -d'/' -f2)
-
-          # 2. If config-file doesn't exist, copy from the subfolder path and swap placeholder
-          if [ ! -f "release-please-config.json" ]; then
-            echo "Creating dynamic configuration file for $REPO_NAME..."
-            cp .github-shared-templates/.github/templates/release-please-config.json ./release-please-config.json
-            sed -i "s/{{PACKAGE_NAME}}/$REPO_NAME/g" release-please-config.json
-          fi
-
-          # 3. Copy base manifest from the subfolder path ONLY if the project doesn't have one already
-          cp -n .github-shared-templates/.github/templates/.release-please-manifest.json ./ || true
 
       - name: Run release-please
         uses: googleapis/release-please-action@v4

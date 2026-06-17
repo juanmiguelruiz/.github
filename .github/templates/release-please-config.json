@@ -2,7 +2,7 @@
   "packages": {
     ".": {
       "release-type": "node",
-      "package-name": "avanta-webapp",
+      "package-name": "package-name",
       "changelog-sections": [
         {
           "type": "feat",
