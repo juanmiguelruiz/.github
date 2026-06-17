@@ -1,4 +1,4 @@
-name: Release Please (Reusable)
+name: Release Please
 
 on:
   workflow_call:
@@ -7,28 +7,34 @@ on:
         required: true
         type: string
     secrets:
-      TOKEN:
+      APP_ID:
         required: true
-
-permissions:
-  contents: write
-  pull-requests: write
+      APP_PRIVATE_KEY:
+        required: true
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
       - name: Checkout source repository
         uses: actions/checkout@v4
         with:
           repository: ${{ inputs.repository }}
-          token: ${{ secrets.TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Checkout global templates
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/.github
-          token: ${{ secrets.TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           path: .github-shared-templates
 
       - name: Inject and customize configurations
@@ -51,4 +57,4 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-          token: ${{ secrets.TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
