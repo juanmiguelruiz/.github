@@ -13,10 +13,16 @@ on:
         required: true
       APP_PRIVATE_KEY:
         required: true
+    outputs:
+      releases_created:
+        description: "True if releases were created, false otherwise"
+        value: ${{ jobs.release-please.outputs.releases_created }}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
     steps:
       - name: Generate GitHub App Token
         id: app-token
@@ -32,6 +38,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Run release-please
+        id: release
         uses: googleapis/release-please-action@v4
         with:
           config-file: release-please-config.json
